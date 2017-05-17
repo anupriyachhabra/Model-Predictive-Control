@@ -6,8 +6,8 @@
 using CppAD::AD;
 
 // TODO: Set the timestep length and duration
-size_t N = 100;
-double dt = 0.05;
+size_t N = 6;
+double dt = 0.1;
 
 // This value assumes the model presented in the classroom is used.
 //
@@ -71,7 +71,7 @@ class FG_eval {
 
     // Minimize the value gap between sequential actuations.
     for (int i = 0; i < N - 2; i++) {
-      fg[0] += CppAD::pow(vars[delta_start + i + 1] - vars[delta_start + i], 2);
+      fg[0] += 500*CppAD::pow(vars[delta_start + i + 1] - vars[delta_start + i], 2);
       fg[0] += CppAD::pow(vars[a_start + i + 1] - vars[a_start + i], 2);
     }
 
@@ -194,8 +194,8 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
   // degrees (values in radians).
   // NOTE: Feel free to change this to something else.
   for (int i = delta_start; i < a_start; i++) {
-    vars_lowerbound[i] = -0.436332;
-    vars_upperbound[i] = 0.436332;
+    vars_lowerbound[i] = -0.33;
+    vars_upperbound[i] = 0.33;
   }
 
   // Acceleration/decceleration upper and lower limits.
@@ -247,7 +247,7 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
   options += "Sparse  true        reverse\n";
   // NOTE: Currently the solver has a maximum time limit of 0.5 seconds.
   // Change this as you see fit.
-  options += "Numeric max_cpu_time          0.5\n";
+  options += "Numeric max_cpu_time          0.1\n";
 
   // place to return solution
   CppAD::ipopt::solve_result<Dvector> solution;

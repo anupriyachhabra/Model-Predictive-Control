@@ -107,11 +107,8 @@ int main() {
           state << px, py, psi, v, cte, epsi;
           auto vars = mpc.Solve(state, coeffs);
 
-          double steer_value = vars[2];
-          double throttle_value = 0.3;
-
-          if (vars[3] > v && vars[3] > 20) throttle_value--;
-          else throttle_value++;
+          double steer_value = vars[6];
+          double throttle_value = vars[7];
 
           json msgJson;
           msgJson["steering_angle"] = steer_value;
@@ -149,7 +146,7 @@ int main() {
           //
           // NOTE: REMEMBER TO SET THIS TO 100 MILLISECONDS BEFORE
           // SUBMITTING.
-          this_thread::sleep_for(chrono::milliseconds(0));
+          this_thread::sleep_for(chrono::milliseconds(100));
           ws.send(msg.data(), msg.length(), uWS::OpCode::TEXT);
         }
       } else {
