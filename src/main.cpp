@@ -8,6 +8,9 @@
 #include "Eigen-3.3/Eigen/QR"
 #include "MPC.h"
 #include "json.hpp"
+#include <fstream>
+#include <iostream>
+#include <sstream>
 
 // for convenience
 using json = nlohmann::json;
@@ -41,6 +44,31 @@ double polyeval(Eigen::VectorXd coeffs, double x) {
   return result;
 }
 
+void transform_map_coord(vector<double>& xvals,vector<double>& yvals, double vehicle_x, double vehicle_y, double vehicle_theta) {
+
+  vector<double> transformed_x;
+  vector<double> transformed_y;
+  int total_size = xvals.size();
+
+  for (int i = 0; i < total_size; i++) {
+
+    double new_x;
+    double new_y;
+
+    double cos_theta = cos(vehicle_theta - M_PI / 2);
+    double sin_theta = sin(vehicle_theta - M_PI / 2);
+    new_x = (xvals[i] - vehicle_x) * sin_theta + (yvals[i] - vehicle_y) * cos_theta;
+    new_y = -(xvals[i] - vehicle_x) * cos_theta - (yvals[i] - vehicle_y) * sin_theta;
+
+    transformed_x.push_back(new_x);
+    transformed_y.push_back(new_y);
+  }
+  xvals= transformed_x;
+  yvals = transformed_y;
+
+  return;
+}
+
 // Fit a polynomial.
 // Adapted from
 // https://github.com/JuliaMath/Polynomials.jl/blob/master/src/Polynomials.jl#L676-L716
@@ -64,14 +92,47 @@ Eigen::VectorXd polyfit(Eigen::VectorXd xvals, Eigen::VectorXd yvals,
   auto result = Q.solve(yvals);
   return result;
 }
+void load_waypoints(vector<double>& xvals, vector<double>&  yvals) {
+
+  string in_file_name_ = "../lake_track_waypoints.csv";
+  ifstream in_file_(in_file_name_.c_str(), ifstream::in);
+  cout << "process file" << in_file_name_ << endl;
+  if (!in_file_.is_open()) {
+    cerr << "Cannot open input file: " << in_file_name_ << endl;
+    exit(EXIT_FAILURE);
+  }
+
+  string line;
+  bool first_line = true;
+  while (getline(in_file_, line)) {
+    if (first_line) {
+      //pass the first line, which is label x,y
+      first_line = false;
+      continue;
+    }
+    istringstream iss(line);
+    double x;
+
+    double y;
+    iss >> x;
+    if (iss.peek() == ',')
+      iss.ignore();
+    iss >> y;
+    xvals.push_back(x);
+    yvals.push_back(y);
+
+  }
+}
 
 int main() {
   uWS::Hub h;
-
+  vector<double> next_xvals;
+  vector<double> next_yvals;
+  load_waypoints(next_xvals, next_yvals);
   // MPC is initialized here!
   MPC mpc;
 
-  h.onMessage([&mpc](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
+  h.onMessage([&mpc, &next_xvals, &next_yvals](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
                      uWS::OpCode opCode) {
     // "42" at the start of the message means there's a websocket message event.
     // The 4 signifies a websocket message
@@ -105,7 +166,11 @@ int main() {
           double epsi = -atan(coeffs[1]);
           Eigen::VectorXd state(6);
           state << px, py, psi, v, cte, epsi;
+          if (mpc.x_vals.empty()) mpc.x_vals = {px};
+          if (mpc.y_vals.empty()) mpc.y_vals = {py};
           auto vars = mpc.Solve(state, coeffs);
+          mpc.x_vals.push_back(vars[0]);
+          mpc.y_vals.push_back(vars[1]);
 
           double steer_value = vars[6];
           double throttle_value = vars[7];
@@ -115,24 +180,25 @@ int main() {
           msgJson["throttle"] = throttle_value;
 
           //Display the MPC predicted trajectory 
-          vector<double> mpc_x_vals;
-          vector<double> mpc_y_vals;
+          vector<double> mpc_x_vals = mpc.x_vals;
+          vector<double> mpc_y_vals= mpc.y_vals;
 
           //.. add (x,y) points to list here, points are in reference to the vehicle's coordinate system
           // the points in the simulator are connected by a Green line
-
+          transform_map_coord(mpc_x_vals,mpc_y_vals, px, py, psi);
           msgJson["mpc_x"] = mpc_x_vals;
           msgJson["mpc_y"] = mpc_y_vals;
 
           //Display the waypoints/reference line
           vector<double> next_x_vals;
           vector<double> next_y_vals;
+          transform_map_coord(next_xvals,next_yvals, px, py, psi);
 
           //.. add (x,y) points to list here, points are in reference to the vehicle's coordinate system
           // the points in the simulator are connected by a Yellow line
 
-          msgJson["next_x"] = next_x_vals;
-          msgJson["next_y"] = next_y_vals;
+          msgJson["next_x"] = next_xvals;
+          msgJson["next_y"] = next_yvals;
 
 
           auto msg = "42[\"steer\"," + msgJson.dump() + "]";

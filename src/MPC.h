@@ -24,6 +24,8 @@ class MPC {
   vector<double> epsi_vals;
   vector<double> delta_vals = {};
   vector<double> a_vals = {};
+  vector<double> next_x_vals = {};
+  vector<double> next_y_vals = {};
 
 };
 
