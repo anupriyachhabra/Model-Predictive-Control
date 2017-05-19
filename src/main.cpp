@@ -133,11 +133,7 @@ int main() {
           double epsi = -atan(coeffs[1]);
           Eigen::VectorXd state(6);
           state << px, py, psi, v, cte, epsi;
-          if (mpc.x_vals.empty()) mpc.x_vals = {px};
-          if (mpc.y_vals.empty()) mpc.y_vals = {py};
           auto vars = mpc.Solve(state, coeffs);
-          mpc.x_vals.push_back(vars[0]);
-          mpc.y_vals.push_back(vars[1]);
 
           double steer_value = vars[6];
           double throttle_value = vars[7];

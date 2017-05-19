@@ -18,15 +18,6 @@ class MPC {
 
   vector<double> x_vals;
   vector<double> y_vals;
-  vector<double> psi_vals;
-  vector<double> v_vals;
-  vector<double> cte_vals;
-  vector<double> epsi_vals;
-  vector<double> delta_vals = {};
-  vector<double> a_vals = {};
-  vector<double> next_x_vals = {};
-  vector<double> next_y_vals = {};
-
 };
 
 #endif /* MPC_H */
