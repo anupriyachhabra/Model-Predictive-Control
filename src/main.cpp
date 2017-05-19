@@ -44,7 +44,7 @@ double polyeval(Eigen::VectorXd coeffs, double x) {
   return result;
 }
 
-void transform_map_coord(vector<double>& xvals,vector<double>& yvals, double vehicle_x, double vehicle_y, double vehicle_theta) {
+void transformMapCoord(vector<double> &xvals, vector<double> &yvals, double px, double py, double psi) {
 
   vector<double> transformed_x;
   vector<double> transformed_y;
@@ -55,10 +55,8 @@ void transform_map_coord(vector<double>& xvals,vector<double>& yvals, double veh
     double new_x;
     double new_y;
 
-    double cos_theta = cos(vehicle_theta - M_PI / 2);
-    double sin_theta = sin(vehicle_theta - M_PI / 2);
-    new_x = (xvals[i] - vehicle_x) * sin_theta + (yvals[i] - vehicle_y) * cos_theta;
-    new_y = -(xvals[i] - vehicle_x) * cos_theta - (yvals[i] - vehicle_y) * sin_theta;
+    new_x = (xvals[i] - px) * cos(psi) + (yvals[i] - py) * sin(psi);
+    new_y = -(xvals[i] - px) * sin(psi) + (yvals[i] - py) * cos(psi);
 
     transformed_x.push_back(new_x);
     transformed_y.push_back(new_y);
@@ -92,47 +90,13 @@ Eigen::VectorXd polyfit(Eigen::VectorXd xvals, Eigen::VectorXd yvals,
   auto result = Q.solve(yvals);
   return result;
 }
-void load_waypoints(vector<double>& xvals, vector<double>&  yvals) {
-
-  string in_file_name_ = "../lake_track_waypoints.csv";
-  ifstream in_file_(in_file_name_.c_str(), ifstream::in);
-  cout << "process file" << in_file_name_ << endl;
-  if (!in_file_.is_open()) {
-    cerr << "Cannot open input file: " << in_file_name_ << endl;
-    exit(EXIT_FAILURE);
-  }
-
-  string line;
-  bool first_line = true;
-  while (getline(in_file_, line)) {
-    if (first_line) {
-      //pass the first line, which is label x,y
-      first_line = false;
-      continue;
-    }
-    istringstream iss(line);
-    double x;
-
-    double y;
-    iss >> x;
-    if (iss.peek() == ',')
-      iss.ignore();
-    iss >> y;
-    xvals.push_back(x);
-    yvals.push_back(y);
-
-  }
-}
 
 int main() {
   uWS::Hub h;
-  vector<double> next_xvals;
-  vector<double> next_yvals;
-  load_waypoints(next_xvals, next_yvals);
   // MPC is initialized here!
   MPC mpc;
 
-  h.onMessage([&mpc, &next_xvals, &next_yvals](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
+  h.onMessage([&mpc](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
                      uWS::OpCode opCode) {
     // "42" at the start of the message means there's a websocket message event.
     // The 4 signifies a websocket message
@@ -148,6 +112,9 @@ int main() {
           // j[1] is the data JSON object
           vector<double> ptsx = j[1]["ptsx"];
           vector<double> ptsy = j[1]["ptsy"];
+
+          std::cout << "ptsx" << ptsx.size() << std::endl;
+          std::cout << "ptsy" << ptsy.size() << std::endl;
           double px = j[1]["x"];
           double py = j[1]["y"];
           double psi = j[1]["psi"];
@@ -181,24 +148,24 @@ int main() {
 
           //Display the MPC predicted trajectory 
           vector<double> mpc_x_vals = mpc.x_vals;
-          vector<double> mpc_y_vals= mpc.y_vals;
+          vector<double> mpc_y_vals = mpc.y_vals;
 
           //.. add (x,y) points to list here, points are in reference to the vehicle's coordinate system
           // the points in the simulator are connected by a Green line
-          transform_map_coord(mpc_x_vals,mpc_y_vals, px, py, psi);
+          transformMapCoord(mpc_x_vals, mpc_y_vals, px, py, psi);
           msgJson["mpc_x"] = mpc_x_vals;
           msgJson["mpc_y"] = mpc_y_vals;
 
           //Display the waypoints/reference line
-          vector<double> next_x_vals;
-          vector<double> next_y_vals;
-          transform_map_coord(next_xvals,next_yvals, px, py, psi);
+          vector<double> next_x_vals = ptsx;
+          vector<double> next_y_vals = ptsy;
+          transformMapCoord(next_x_vals, next_y_vals, px, py, psi);
 
           //.. add (x,y) points to list here, points are in reference to the vehicle's coordinate system
           // the points in the simulator are connected by a Yellow line
 
-          msgJson["next_x"] = next_xvals;
-          msgJson["next_y"] = next_yvals;
+          msgJson["next_x"] = next_x_vals;
+          msgJson["next_y"] = next_y_vals;
 
 
           auto msg = "42[\"steer\"," + msgJson.dump() + "]";
