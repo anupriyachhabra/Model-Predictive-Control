@@ -126,20 +126,22 @@ int main() {
           * Both are in between [-1, 1].
           *
           */
+          transformMapCoord(ptsx, ptsy, px, py, psi);
+
           auto coeffs = polyfit(Eigen::VectorXd::Map(ptsx.data(), ptsx.size()), Eigen::VectorXd::Map(ptsy.data(), ptsy.size()), 3);
-          double cte = polyeval(coeffs, px) - py;
+          double cte = polyeval(coeffs, 0);
           // Due to the sign starting at 0, the orientation error is -f'(x).
           // derivative of coeffs[0] + coeffs[1] * x -> coeffs[1]
           double epsi = -atan(coeffs[1]);
           Eigen::VectorXd state(6);
-          state << px, py, psi, v, cte, epsi;
+          state << 0, 0, 0, v, cte, epsi;
           auto vars = mpc.Solve(state, coeffs);
 
           double steer_value = vars[6];
           double throttle_value = vars[7];
 
           json msgJson;
-          msgJson["steering_angle"] = steer_value;
+          msgJson["steering_angle"] = -steer_value;
           msgJson["throttle"] = throttle_value;
 
           //Display the MPC predicted trajectory 
@@ -148,14 +150,12 @@ int main() {
 
           //.. add (x,y) points to list here, points are in reference to the vehicle's coordinate system
           // the points in the simulator are connected by a Green line
-          transformMapCoord(mpc_x_vals, mpc_y_vals, px, py, psi);
           msgJson["mpc_x"] = mpc_x_vals;
           msgJson["mpc_y"] = mpc_y_vals;
 
           //Display the waypoints/reference line
           vector<double> next_x_vals = ptsx;
           vector<double> next_y_vals = ptsy;
-          transformMapCoord(next_x_vals, next_y_vals, px, py, psi);
 
           //.. add (x,y) points to list here, points are in reference to the vehicle's coordinate system
           // the points in the simulator are connected by a Yellow line
