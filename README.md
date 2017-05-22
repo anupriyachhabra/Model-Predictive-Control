@@ -18,13 +18,13 @@ in this simulated environment.
 a referes to acceleration or throttle that should be applied to vehicle. 
 It can have both positive values for speeding and negative values for breaking.
 
-The Kinematic equations used for updating vehicle state are as follows
-x​t+1​​=x​t​​+v​t​​∗cos(ψ​t​​)∗dt
-y​t+1​​=y​t​​+v​t​​∗sin(ψ​t​​)∗dt
-ψ​t+1​​=ψ​t​​+​L​f​​​​v​t​​​​∗δ∗dt
-v​t+1​​=v​t​​+a​t​​∗dt
-cte​t+1​​=f(x​t​​)−y​t​​+(v​t​​∗sin(eψ​t​​)∗dt)
-eψ​t+1​​=eψ​t​​+​L​f​​​​v​t​​​​∗δ​t​​∗dt
+The Kinematic equations used for updating vehicle state are as follows  
+x​t+1​​=x​t​​+v​t​​∗cos(ψ​t​​)∗dt  
+y​t+1​​=y​t​​+v​t​​∗sin(ψ​t​​)∗dt  
+ψ​t+1​​=ψ​t​​+​L​f​​​​v​t​​​​∗δ∗dt  
+v​t+1​​=v​t​​+a​t​​∗dt  
+cte​t+1​​=f(x​t​​)−y​t​​+(v​t​​∗sin(eψ​t​​)∗dt)  
+eψ​t+1​​=eψ​t​​+​L​f​​​​v​t​​​​∗δ​t​​∗dt  
 
 
 ## Timestamp length and Frequency
@@ -59,7 +59,7 @@ after dt which is 0.1 second(100 ms) in my case. Sending the sum of these 2 actu
 the next actuation and hence handles the 100ms latency.
 
 
-##Simulation
+## Simulation
 
 Here's a [link to my video result](https://youtu.be/ERkIpLQWWK0)
 
